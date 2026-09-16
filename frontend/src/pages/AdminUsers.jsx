@@ -1,0 +1,18 @@
+import { Search, ToggleLeft } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import ErrorState from '../components/ErrorState'
+import EmptyState from '../components/EmptyState'
+import Footer from '../components/Footer'
+import LoadingSpinner from '../components/LoadingSpinner'
+import Navbar from '../components/Navbar'
+import { getAdminUsers, updateUserStatus } from '../services/adminApi'
+
+function AdminUsers() {
+  const [users, setUsers] = useState([]); const [search, setSearch] = useState(''); const [role, setRole] = useState(''); const [loading, setLoading] = useState(true); const [error, setError] = useState('')
+  async function loadUsers() { setLoading(true); setError(''); try { const result = await getAdminUsers({ search, role }); setUsers(result.data) } catch (requestError) { setError(requestError.message) } finally { setLoading(false) } }
+  useEffect(() => { loadUsers() }, [role])
+  async function toggle(user) { try { const result = await updateUserStatus(user._id, !user.isActive); setUsers((current) => current.map((item) => item._id === user._id ? result.data : item)) } catch (requestError) { setError(requestError.message) } }
+  return <div className="min-h-screen bg-[#fbfdfb] text-[#17352b]"><Navbar /><main className="mx-auto max-w-7xl px-5 py-12 lg:px-8 lg:py-16"><p className="eyebrow">Admin workspace</p><h1 className="mt-3 font-display text-5xl font-semibold">Users</h1><div className="mt-8 flex flex-col gap-3 sm:flex-row"><label className="flex flex-1 items-center gap-2 rounded-lg border border-[#cbd9d0] bg-white px-3"><Search size={17} className="text-[#82958a]" /><input className="w-full bg-transparent py-3 text-sm outline-none" placeholder="Search name or email" value={search} onChange={(event) => setSearch(event.target.value)} /></label><select className="rounded-lg border border-[#cbd9d0] bg-white px-3 py-3 text-sm" value={role} onChange={(event) => setRole(event.target.value)}><option value="">All roles</option><option value="candidate">Candidates</option><option value="recruiter">Recruiters</option><option value="admin">Admins</option></select><button className="rounded-lg bg-[#17352b] px-4 py-2 text-sm font-bold text-white" type="button" onClick={loadUsers}>Search</button></div><div className="mt-8">{loading ? <LoadingSpinner label="Loading users" /> : error ? <ErrorState message={error} onRetry={loadUsers} /> : users.length === 0 ? <EmptyState title="No users found" /> : <div className="overflow-x-auto rounded-2xl border border-[#dbe7de] bg-white"><table className="w-full min-w-[680px] text-left text-sm"><thead className="border-b border-[#edf2ed] text-xs uppercase tracking-wider text-[#82958a]"><tr><th className="p-4">User</th><th className="p-4">Role</th><th className="p-4">Status</th><th className="p-4">Action</th></tr></thead><tbody className="divide-y divide-[#edf2ed]">{users.map((user) => <tr key={user._id}><td className="p-4"><p className="font-bold">{user.name}</p><p className="text-xs text-[#82958a]">{user.email}</p></td><td className="p-4 capitalize">{user.role}</td><td className="p-4"><span className={`rounded-full px-2.5 py-1 text-xs font-bold ${user.isActive ? 'bg-[#e4f0e7] text-[#28704d]' : 'bg-[#fff0eb] text-[#a34d34]'}`}>{user.isActive ? 'Active' : 'Inactive'}</span></td><td className="p-4"><button className="inline-flex items-center gap-1.5 rounded-lg border border-[#cbd9d0] px-3 py-2 text-xs font-bold" type="button" onClick={() => toggle(user)}><ToggleLeft size={14} /> {user.isActive ? 'Deactivate' : 'Activate'}</button></td></tr>)}</tbody></table></div>}</div></main><Footer /></div>
+}
+
+export default AdminUsers
